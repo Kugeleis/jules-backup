@@ -26,3 +26,9 @@ package = false
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.ty.environment]
+root = ["../backend/app"]
+
+[tool.ty.src]
+include = ["../backend/app", "../backend/tests"]

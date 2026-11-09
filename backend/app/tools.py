@@ -93,7 +93,7 @@ class ToolExecutor:
             with open(target, "w", encoding="utf-8") as f:
                 f.write(updated)
             return {"result": f"Successfully applied merge diff to '{filepath}'."}
-        except Exception as e:  # noqa: BLE001
+        except OSError as e:
             return {"error": str(e)}
 
     def delete_file(self, filepath: str) -> dict[str, Any]:
@@ -123,7 +123,7 @@ class ToolExecutor:
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.move(src, dst)
             return {"result": f"Renamed '{filepath}' to '{new_filepath}' successfully."}
-        except Exception as e:  # noqa: BLE001
+        except OSError as e:
             return {"error": str(e)}
 
     async def run_in_bash(self, command: str, timeout: int = 120) -> dict[str, Any]:

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.agent import TOOL_DEFINITIONS, JulesAgentEngine
-from app.models import TaskInitRequest, ToolCallRequest, UserResponseRequest
+from app.models import Message, TaskInitRequest, ToolCallRequest, UserResponseRequest
 
 app = FastAPI(title="Jules Agent API", version="1.0.0")
 
@@ -43,7 +43,7 @@ def get_state():
         "pending_user_prompt": engine.pending_user_prompt,
         "is_completed": engine.is_completed,
         "submission_details": engine.submission_details,
-        "messages": [m.dict() for m in engine.messages],
+        "messages": [m.model_dump() for m in engine.messages],
     }
 
 
@@ -52,7 +52,7 @@ def init_task(req: TaskInitRequest):
     global engine
     if req.workspace_path:
         engine = JulesAgentEngine(req.workspace_path)
-    engine.messages.append({"role": "user", "content": req.prompt})
+    engine.messages.append(Message(role="user", content=req.prompt))
     return {"status": "initialized", "prompt": req.prompt}
 
 
@@ -70,7 +70,7 @@ def reply_to_user(req: UserResponseRequest):
         )
     engine.waiting_for_user = False
     engine.pending_user_prompt = None
-    engine.messages.append({"role": "user", "content": req.response})
+    engine.messages.append(Message(role="user", content=req.response))
     return {"status": "received", "message": req.response}
 
 
