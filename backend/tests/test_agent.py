@@ -16,12 +16,14 @@ def test_diff_engine():
     assert "line 1" in updated
     assert "line 3" in updated
 
+
 def test_planner():
     md = """1. *Step one*\n   - Detail one\n2. *Step two*\n   - Detail two\n3. *Complete pre commit steps*\n4. *Submit the change.*"""
     state: PlanState = parse_plan_markdown(md)
     assert len(state.steps) == 4
     assert state.steps[0].title == "Step one"
     assert state.current_step_id == 1
+
 
 def test_agent_tools(tmp_path):
     workspace = str(tmp_path)
@@ -48,7 +50,9 @@ def test_agent_tools(tmp_path):
 
     # planning execution
     agent.execute_tool("set_plan", {"plan": "1. *Step 1*\n2. *Step 2*"})
+    assert agent.plan_state is not None
     assert agent.plan_state.current_step_id == 1
     agent.execute_tool("plan_step_complete", {"message": "Done step 1"})
+    assert agent.plan_state is not None
     assert agent.plan_state.current_step_id == 2
     assert agent.plan_state.steps[0].completed is True
