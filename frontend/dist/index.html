@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jules Coding Agent Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="app-header">
+        <div class="logo-container">
+            <svg class="jules-icon" viewBox="0 0 24 24" width="24" height="24">
+                <path fill="#4285F4" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+            </svg>
+            <span class="logo-text">jules <span class="badge">agent-studio</span></span>
+        </div>
+        <div class="header-status">
+            <span id="connection-status" class="status-indicator online">Connected</span>
+            <span id="workspace-label" class="workspace-label">/app</span>
+        </div>
+    </header>
+
+    <main class="main-layout">
+        <!-- Sidebar: Planning & Steps Tracker -->
+        <aside class="sidebar-panel">
+            <div class="panel-header">
+                <h3>Execution Plan</h3>
+                <span id="step-counter" class="badge">0 / 0</span>
+            </div>
+            <div id="plan-container" class="plan-list">
+                <div class="empty-state">No active plan initialized.</div>
+            </div>
+
+            <div class="panel-header mt-4">
+                <h3>Quick Tools</h3>
+            </div>
+            <div class="tool-actions">
+                <button class="btn btn-secondary" onclick="triggerListFiles()">List Files</button>
+                <button class="btn btn-secondary" onclick="triggerStatus()">System Health</button>
+            </div>
+        </aside>
+
+        <!-- Center: Task Interaction & Tool Output Feed -->
+        <section class="activity-panel">
+            <div class="panel-header">
+                <h3>Activity Stream</h3>
+                <div class="actions">
+                    <button class="btn btn-sm btn-outline" onclick="clearFeed()">Clear</button>
+                </div>
+            </div>
+            <div id="feed-container" class="feed-container">
+                <div class="feed-item agent-message">
+                    <div class="feed-header">
+                        <span class="badge agent-badge">Jules</span>
+                        <span class="feed-time">Ready</span>
+                    </div>
+                    <div class="feed-content">
+                        Jules agent engine is active and awaiting commands or tasks.
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Input Bar -->
+            <div class="input-container">
+                <textarea id="prompt-input" placeholder="Type a task prompt or respond to Jules..." rows="2"></textarea>
+                <button id="send-btn" class="btn btn-primary" onclick="submitPrompt()">Send</button>
+            </div>
+        </section>
+
+        <!-- Right: Code & Diff Inspector -->
+        <aside class="inspector-panel">
+            <div class="panel-header">
+                <h3>Diff & Tool Inspector</h3>
+                <span id="inspector-file-badge" class="badge">Preview</span>
+            </div>
+            <div id="inspector-content" class="inspector-content">
+                <pre><code id="inspector-code">Select a tool action or file to inspect changes...</code></pre>
+            </div>
+        </aside>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
