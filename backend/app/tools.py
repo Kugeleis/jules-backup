@@ -58,7 +58,7 @@ class ToolExecutor:
             with open(target, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read()
             return {"result": content}
-        except Exception as e:  # noqa: BLE001
+        except OSError as e:
             return {"error": str(e)}
 
     def write_file(self, filepath: str, content: str) -> dict[str, Any]:
@@ -71,7 +71,7 @@ class ToolExecutor:
             return {
                 "result": f"File '{filepath}' written successfully ({len(content)} bytes)."
             }
-        except Exception as e:  # noqa: BLE001
+        except OSError as e:
             return {"error": str(e)}
 
     def replace_with_git_merge_diff(
@@ -107,7 +107,7 @@ class ToolExecutor:
             else:
                 os.remove(target)
             return {"result": f"Deleted '{filepath}' successfully."}
-        except Exception as e:  # noqa: BLE001
+        except OSError as e:
             return {"error": str(e)}
 
     def rename_file(self, filepath: str, new_filepath: str) -> dict[str, Any]:
@@ -155,5 +155,5 @@ class ToolExecutor:
                     "returncode": -1,
                     "output": f"Command timed out after {timeout} seconds.",
                 }
-        except Exception as e:  # noqa: BLE001
+        except OSError as e:
             return {"returncode": -1, "output": str(e)}
