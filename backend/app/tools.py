@@ -1,9 +1,10 @@
+import asyncio
 import os
 import shutil
-import asyncio
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 from app.diff_utils import apply_git_merge_diff
+
 
 class ToolExecutor:
     def __init__(self, workspace_root: str):
@@ -24,10 +25,14 @@ class ToolExecutor:
         return target
 
     def _validate_safe_path(self, path: str):
-        if not (path == self.workspace_root or path.startswith(self.workspace_root + os.sep)):
-            raise PermissionError(f"Access denied: Path '{path}' is outside workspace root.")
+        if not (
+            path == self.workspace_root or path.startswith(self.workspace_root + os.sep)
+        ):
+            raise PermissionError(
+                f"Access denied: Path '{path}' is outside workspace root."
+            )
 
-    def list_files(self, path: str = "") -> Dict[str, Any]:
+    def list_files(self, path: str = "") -> dict[str, Any]:
         target_dir = self._resolve_path(path)
         self._validate_safe_path(target_dir)
         if not os.path.exists(target_dir):
@@ -42,7 +47,7 @@ class ToolExecutor:
             entries.append(f"{entry}/" if is_dir else entry)
         return {"result": entries}
 
-    def read_file(self, filepath: str) -> Dict[str, Any]:
+    def read_file(self, filepath: str) -> dict[str, Any]:
         target = self._resolve_path(filepath)
         self._validate_safe_path(target)
         if not os.path.exists(target):
@@ -53,21 +58,25 @@ class ToolExecutor:
             with open(target, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read()
             return {"result": content}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"error": str(e)}
 
-    def write_file(self, filepath: str, content: str) -> Dict[str, Any]:
+    def write_file(self, filepath: str, content: str) -> dict[str, Any]:
         target = self._resolve_path(filepath)
         self._validate_safe_path(target)
         try:
             os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, "w", encoding="utf-8") as f:
                 f.write(content)
-            return {"result": f"File '{filepath}' written successfully ({len(content)} bytes)."}
-        except Exception as e:
+            return {
+                "result": f"File '{filepath}' written successfully ({len(content)} bytes)."
+            }
+        except Exception as e:  # noqa: BLE001
             return {"error": str(e)}
 
-    def replace_with_git_merge_diff(self, filepath: str, merge_diff: str) -> Dict[str, Any]:
+    def replace_with_git_merge_diff(
+        self, filepath: str, merge_diff: str
+    ) -> dict[str, Any]:
         target = self._resolve_path(filepath)
         self._validate_safe_path(target)
         if not os.path.exists(target):
@@ -84,10 +93,10 @@ class ToolExecutor:
             with open(target, "w", encoding="utf-8") as f:
                 f.write(updated)
             return {"result": f"Successfully applied merge diff to '{filepath}'."}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"error": str(e)}
 
-    def delete_file(self, filepath: str) -> Dict[str, Any]:
+    def delete_file(self, filepath: str) -> dict[str, Any]:
         target = self._resolve_path(filepath)
         self._validate_safe_path(target)
         if not os.path.exists(target):
@@ -98,10 +107,10 @@ class ToolExecutor:
             else:
                 os.remove(target)
             return {"result": f"Deleted '{filepath}' successfully."}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"error": str(e)}
 
-    def rename_file(self, filepath: str, new_filepath: str) -> Dict[str, Any]:
+    def rename_file(self, filepath: str, new_filepath: str) -> dict[str, Any]:
         src = self._resolve_path(filepath)
         dst = self._resolve_path(new_filepath)
         self._validate_safe_path(src)
@@ -114,19 +123,21 @@ class ToolExecutor:
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.move(src, dst)
             return {"result": f"Renamed '{filepath}' to '{new_filepath}' successfully."}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return {"error": str(e)}
 
-    async def run_in_bash(self, command: str, timeout: int = 120) -> Dict[str, Any]:
+    async def run_in_bash(self, command: str, timeout: int = 120) -> dict[str, Any]:
         try:
             proc = await asyncio.create_subprocess_shell(
                 command,
                 cwd=self.workspace_root,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
             try:
-                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(), timeout=timeout
+                )
                 output = stdout.decode("utf-8", errors="replace")
                 if stderr:
                     err_text = stderr.decode("utf-8", errors="replace")
@@ -134,15 +145,15 @@ class ToolExecutor:
                         output += "\n" + err_text
                     else:
                         output = err_text
-                return {
-                    "returncode": proc.returncode,
-                    "output": output
-                }
-            except asyncio.TimeoutError:
+                return {"returncode": proc.returncode, "output": output}
+            except TimeoutError:
                 try:
                     proc.kill()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
-                return {"returncode": -1, "output": f"Command timed out after {timeout} seconds."}
-        except Exception as e:
+                return {
+                    "returncode": -1,
+                    "output": f"Command timed out after {timeout} seconds.",
+                }
+        except Exception as e:  # noqa: BLE001
             return {"returncode": -1, "output": str(e)}

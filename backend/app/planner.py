@@ -1,6 +1,7 @@
 import re
-from typing import List
-from app.models import PlanStep, PlanState
+
+from app.models import PlanState, PlanStep
+
 
 def parse_plan_markdown(markdown_text: str) -> PlanState:
     """
@@ -10,23 +11,25 @@ def parse_plan_markdown(markdown_text: str) -> PlanState:
        - Description bullet point
     """
     lines = markdown_text.strip().splitlines()
-    steps: List[PlanStep] = []
+    steps: list[PlanStep] = []
 
     current_id = None
     current_title = ""
     current_details = []
 
-    step_regex = re.compile(r'^\s*(\d+)\.\s*(.*)')
+    step_regex = re.compile(r"^\s*(\d+)\.\s*(.*)")
 
     for line in lines:
         match = step_regex.match(line)
         if match:
             if current_id is not None:
-                steps.append(PlanStep(
-                    id=current_id,
-                    title=current_title.strip("* "),
-                    details="\n".join(current_details).strip()
-                ))
+                steps.append(
+                    PlanStep(
+                        id=current_id,
+                        title=current_title.strip("* "),
+                        details="\n".join(current_details).strip(),
+                    )
+                )
             current_id = int(match.group(1))
             current_title = match.group(2).strip()
             current_details = []
@@ -35,15 +38,15 @@ def parse_plan_markdown(markdown_text: str) -> PlanState:
                 current_details.append(line)
 
     if current_id is not None:
-        steps.append(PlanStep(
-            id=current_id,
-            title=current_title.strip("* "),
-            details="\n".join(current_details).strip()
-        ))
+        steps.append(
+            PlanStep(
+                id=current_id,
+                title=current_title.strip("* "),
+                details="\n".join(current_details).strip(),
+            )
+        )
 
     first_incomplete = next((s.id for s in steps if not s.completed), None)
     return PlanState(
-        raw_markdown=markdown_text,
-        steps=steps,
-        current_step_id=first_incomplete
+        raw_markdown=markdown_text, steps=steps, current_step_id=first_incomplete
     )

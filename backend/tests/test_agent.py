@@ -10,7 +10,7 @@ from app.planner import parse_plan_markdown
 def test_diff_engine():
     original = "line 1\nline 2\nline 3\n"
     diff = "<<<<<<< SEARCH\nline 2\n=======\nline 2 modified\n>>>>>>> REPLACE"
-    success, updated, err = apply_git_merge_diff(original, diff)
+    success, updated, _err = apply_git_merge_diff(original, diff)
     assert success
     assert "line 2 modified" in updated
     assert "line 1" in updated
@@ -30,7 +30,9 @@ def test_agent_tools(tmp_path):
     agent = JulesAgentEngine(workspace)
 
     # write file
-    res: dict[str, Any] = agent.execute_tool("write_file", {"filepath": "hello.txt", "content": "world"})
+    res: dict[str, Any] = agent.execute_tool(
+        "write_file", {"filepath": "hello.txt", "content": "world"}
+    )
     assert "error" not in res
     assert os.path.exists(os.path.join(workspace, "hello.txt"))
 
@@ -44,9 +46,14 @@ def test_agent_tools(tmp_path):
 
     # git merge diff
     diff = "<<<<<<< SEARCH\nworld\n=======\nearth\n>>>>>>> REPLACE"
-    res: dict[str, Any] = agent.execute_tool("replace_with_git_merge_diff", {"filepath": "hello.txt", "merge_diff": diff})
+    res: dict[str, Any] = agent.execute_tool(
+        "replace_with_git_merge_diff", {"filepath": "hello.txt", "merge_diff": diff}
+    )
     assert "error" not in res
-    assert agent.execute_tool("read_file", {"filepath": "hello.txt"}).get("result") == "earth"
+    assert (
+        agent.execute_tool("read_file", {"filepath": "hello.txt"}).get("result")
+        == "earth"
+    )
 
     # planning execution
     agent.execute_tool("set_plan", {"plan": "1. *Step 1*\n2. *Step 2*"})
