@@ -1,6 +1,6 @@
 import re
 from typing import List
-from backend.app.models import PlanStep, PlanState
+from app.models import PlanStep, PlanState
 
 def parse_plan_markdown(markdown_text: str) -> PlanState:
     """

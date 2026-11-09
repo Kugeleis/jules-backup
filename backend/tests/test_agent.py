@@ -1,8 +1,11 @@
 import os
-import pytest
-from backend.app.agent import JulesAgentEngine
-from backend.app.diff_utils import apply_git_merge_diff
-from backend.app.planner import parse_plan_markdown
+from typing import Any
+
+from app.agent import JulesAgentEngine
+from app.diff_utils import apply_git_merge_diff
+from app.models import PlanState
+from app.planner import parse_plan_markdown
+
 
 def test_diff_engine():
     original = "line 1\nline 2\nline 3\n"
@@ -15,7 +18,7 @@ def test_diff_engine():
 
 def test_planner():
     md = """1. *Step one*\n   - Detail one\n2. *Step two*\n   - Detail two\n3. *Complete pre commit steps*\n4. *Submit the change.*"""
-    state = parse_plan_markdown(md)
+    state: PlanState = parse_plan_markdown(md)
     assert len(state.steps) == 4
     assert state.steps[0].title == "Step one"
     assert state.current_step_id == 1
@@ -25,21 +28,21 @@ def test_agent_tools(tmp_path):
     agent = JulesAgentEngine(workspace)
 
     # write file
-    res = agent.execute_tool("write_file", {"filepath": "hello.txt", "content": "world"})
+    res: dict[str, Any] = agent.execute_tool("write_file", {"filepath": "hello.txt", "content": "world"})
     assert "error" not in res
     assert os.path.exists(os.path.join(workspace, "hello.txt"))
 
     # read file
-    res = agent.execute_tool("read_file", {"filepath": "hello.txt"})
+    res: dict[str, Any] = agent.execute_tool("read_file", {"filepath": "hello.txt"})
     assert res.get("result") == "world"
 
     # list files
-    res = agent.execute_tool("list_files", {})
+    res: dict[str, Any] = agent.execute_tool("list_files", {})
     assert "hello.txt" in res.get("result", [])
 
     # git merge diff
     diff = "<<<<<<< SEARCH\nworld\n=======\nearth\n>>>>>>> REPLACE"
-    res = agent.execute_tool("replace_with_git_merge_diff", {"filepath": "hello.txt", "merge_diff": diff})
+    res: dict[str, Any] = agent.execute_tool("replace_with_git_merge_diff", {"filepath": "hello.txt", "merge_diff": diff})
     assert "error" not in res
     assert agent.execute_tool("read_file", {"filepath": "hello.txt"}).get("result") == "earth"
 

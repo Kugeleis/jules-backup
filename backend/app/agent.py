@@ -1,9 +1,8 @@
-import json
-import asyncio
-from typing import Dict, Any, List, Optional, Callable
-from backend.app.models import Message, PlanState, PlanStep
-from backend.app.tools import ToolExecutor
-from backend.app.planner import parse_plan_markdown
+from typing import Any
+
+from app.models import Message, PlanState, PlanStep
+from app.planner import parse_plan_markdown
+from app.tools import ToolExecutor
 
 TOOL_DEFINITIONS = [
     {
@@ -133,16 +132,16 @@ TOOL_DEFINITIONS = [
 
 class JulesAgentEngine:
     def __init__(self, workspace_root: str):
-        self.workspace_root = workspace_root
+        self.workspace_root: str = workspace_root
         self.tools = ToolExecutor(workspace_root)
-        self.plan_state: Optional[PlanState] = None
-        self.messages: List[Message] = []
+        self.plan_state: PlanState | None = None
+        self.messages: list[Message] = []
         self.waiting_for_user = False
-        self.pending_user_prompt: Optional[str] = None
+        self.pending_user_prompt: str | None = None
         self.is_completed = False
-        self.submission_details: Optional[Dict[str, Any]] = None
+        self.submission_details: dict[str, Any] | None = None
 
-    def execute_tool(self, name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tool(self, name: str, args: dict[str, Any]) -> dict[str, Any]:
         """Dispatches tool execution synchronously or asynchronously."""
         if name == "list_files":
             return self.tools.list_files(args.get("path", ""))
@@ -163,11 +162,11 @@ class JulesAgentEngine:
         elif name == "plan_step_complete":
             msg = args.get("message", "")
             if self.plan_state and self.plan_state.current_step_id is not None:
-                step = next((s for s in self.plan_state.steps if s.id == self.plan_state.current_step_id), None)
+                step: PlanStep | None = next((s for s in self.plan_state.steps if s.id == self.plan_state.current_step_id), None)
                 if step:
                     step.completed = True
                     step.completion_message = msg
-                next_step = next((s for s in self.plan_state.steps if not s.completed), None)
+                next_step: PlanStep | None = next((s for s in self.plan_state.steps if not s.completed), None)
                 self.plan_state.current_step_id = next_step.id if next_step else None
                 return {"result": f"Step marked complete: {msg}"}
             return {"result": f"Marked complete: {msg}"}
@@ -187,12 +186,12 @@ class JulesAgentEngine:
             return {"result": f"Message displayed to user: {args.get('message')}"}
         elif name == "submit":
             self.is_completed = True
-            self.submission_details = args
+            self.submission_details: dict[str, Any] = args
             return {"result": f"Successfully submitted change to branch '{args.get('branch_name')}'."}
         else:
             return {"error": f"Unknown tool '{name}'"}
 
-    async def execute_tool_async(self, name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_tool_async(self, name: str, args: dict[str, Any]) -> dict[str, Any]:
         if name == "run_in_bash_session":
             cmd = args.get("command", "")
             return await self.tools.run_in_bash(cmd)

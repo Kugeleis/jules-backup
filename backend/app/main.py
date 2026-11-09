@@ -1,10 +1,12 @@
 import os
-from typing import Dict, Any, List
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from typing import Any
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from backend.app.models import TaskInitRequest, ToolCallRequest, UserResponseRequest
-from backend.app.agent import JulesAgentEngine, TOOL_DEFINITIONS
+
+from app.agent import TOOL_DEFINITIONS, JulesAgentEngine
+from app.models import TaskInitRequest, ToolCallRequest, UserResponseRequest
 
 app = FastAPI(title="Jules Agent API", version="1.0.0")
 
@@ -52,7 +54,7 @@ def init_task(req: TaskInitRequest):
 
 @app.post("/api/tool/execute")
 async def execute_tool(req: ToolCallRequest):
-    result = await engine.execute_tool_async(req.name, req.arguments)
+    result: dict[str, Any] = await engine.execute_tool_async(req.name, req.arguments)
     return {"tool": req.name, "result": result}
 
 @app.post("/api/user/reply")
@@ -71,3 +73,13 @@ def reply_to_user(req: UserResponseRequest):
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist"))
 if os.path.exists(static_dir):
     app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")
+
+
+def main() -> None:
+    """Console-script entry point: serve the FastAPI app with uvicorn.
+
+    Equivalent to the Docker CMD: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    """
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,7 +1,7 @@
 import re
-from typing import Tuple
 
-def apply_git_merge_diff(original_content: str, diff_text: str) -> Tuple[bool, str, str]:
+
+def apply_git_merge_diff(original_content: str, diff_text: str) -> tuple[bool, str, str]:
     """
     Applies search and replace blocks formatted with Git merge conflict markers:
     <<<<<<< SEARCH
@@ -13,8 +13,8 @@ def apply_git_merge_diff(original_content: str, diff_text: str) -> Tuple[bool, s
     Returns:
         (success: bool, updated_content: str, error_message: str)
     """
-    pattern = re.compile(r'<<<<<<< SEARCH\r?\n(.*?)\r?\n=======\r?\n(.*?)\r?\n>>>>>>> REPLACE', re.DOTALL)
-    matches = list(pattern.finditer(diff_text))
+    pattern: re.Pattern[str] = re.compile(r'<<<<<<< SEARCH\r?\n(.*?)\r?\n=======\r?\n(.*?)\r?\n>>>>>>> REPLACE', re.DOTALL)
+    matches: list[re.Match[str]] = list(pattern.finditer(diff_text))
 
     if not matches:
         return False, original_content, "No valid Git merge diff blocks found. Format: <<<<<<< SEARCH ... ======= ... >>>>>>> REPLACE"

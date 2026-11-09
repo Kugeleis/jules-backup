@@ -3,7 +3,7 @@ import shutil
 import asyncio
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-from backend.app.diff_utils import apply_git_merge_diff
+from app.diff_utils import apply_git_merge_diff
 
 class ToolExecutor:
     def __init__(self, workspace_root: str):
