@@ -96,69 +96,82 @@ Always use this tool when creating or modifying a plan.
 ## 2. Core Tool Declarations & Schemas
 
 ### `list_files`
+
 - **Description**: Lists all files and directories under the given directory (defaults to repo root).
 - **Parameters**:
   - `path` (string, optional): Directory path to list files from.
 
 ### `read_file`
+
 - **Description**: Reads the content of the specified file in the repo.
 - **Parameters**:
   - `filepath` (string, required): The path of the file to read.
 
 ### `write_file`
+
 - **Description**: Creates a new file or overwrites an existing file.
 - **Parameters**:
   - `filepath` (string, required): The path of the file.
   - `content` (string, required): Content to write.
 
 ### `replace_with_git_merge_diff`
+
 - **Description**: Performs targeted search-and-replace using Git merge conflict markers (`<<<<<<< SEARCH`, `=======`, `>>>>>>> REPLACE`).
 - **Parameters**:
   - `filepath` (string, required): The path of the file.
   - `merge_diff` (string, required): The merge diff payload.
 
 ### `delete_file`
+
 - **Description**: Deletes a specified file.
 - **Parameters**:
   - `filepath` (string, required): Path of the file.
 
 ### `rename_file`
+
 - **Description**: Renames or moves files and directories.
 - **Parameters**:
   - `filepath` (string, required): Current path.
   - `new_filepath` (string, required): Target path.
 
 ### `run_in_bash_session`
+
 - **Description**: Runs a bash command in a persistent shell session from the repository root directory.
 - **Parameters**:
   - `command` (string, required): The bash command.
 
 ### `set_plan`
+
 - **Description**: Sets or updates the multi-step plan in Markdown format.
 - **Parameters**:
   - `plan` (string, required): Plan markdown.
 
 ### `plan_step_complete`
+
 - **Description**: Marks the current plan step as complete with an explanatory message.
 - **Parameters**:
   - `message` (string, required): User-visible summary of completed actions.
 
 ### `pre_commit_instructions`
+
 - **Description**: Returns instructions on pre-commit steps and checks required before submitting changes.
 - **Parameters**: None.
 
 ### `request_user_input`
+
 - **Description**: Prompts the user with a question and awaits their response.
 - **Parameters**:
   - `message` (string, required): Question or prompt.
 
 ### `message_user`
+
 - **Description**: Sends an informational status update to the user.
 - **Parameters**:
   - `message` (string, required): Content message.
   - `continue_working` (boolean, required): Whether agent continues execution immediately.
 
 ### `submit`
+
 - **Description**: Commits changes and requests pull request submission.
 - **Parameters**:
   - `branch_name` (string, required)

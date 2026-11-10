@@ -1,11 +1,10 @@
-from box import Box
-from fastapi.testclient import TestClient
-
 from app.agent import JulesAgentEngine
 from app.config import config
 from app.db import TaskDatabase
 from app.main import app
 from app.models import Message
+from box import Box
+from fastapi.testclient import TestClient
 
 
 def test_config_loading():

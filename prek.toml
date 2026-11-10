@@ -26,5 +26,5 @@ hooks = [
 repo = "https://github.com/astral-sh/ty-pre-commit"
 rev = "v0.0.99" # ty version.
 hooks = [
-  { id = "ty" , args = ["--fix"], additional_dependencies = ["fastapi", "uvicorn", "pydantic", "httpx", "aiofiles", "python-multipart"] },
+  { id = "ty" , args = ["--fix"], additional_dependencies = ["fastapi", "uvicorn", "pydantic", "httpx", "aiofiles", "python-multipart", "python-box[ruamel.yaml]", "pyyaml"] },
 ]

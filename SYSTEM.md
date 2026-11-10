@@ -42,6 +42,7 @@ The system consists of four primary subsystems:
 ## 3. Technology Stack
 
 ### A. Frontend Layer
+
 - **Framework**: Modern Single-Page Application (HTML5, Modern CSS, ES6 / React / Vue compatible)
 - **Features**:
   - Live conversation & agent thought streaming
@@ -51,6 +52,7 @@ The system consists of four primary subsystems:
   - Live preview / screenshot gallery viewer
 
 ### B. Backend Agent Layer
+
 - **Runtime**: Python 3.11+
 - **Web Framework**: FastAPI / Starlette, Uvicorn
 - **Concurrency**: Asynchronous event loop (`asyncio`) handling streaming tool invocations
@@ -58,6 +60,7 @@ The system consists of four primary subsystems:
 - **LLM Support**: Pluggable provider system (Gemini 1.5 Pro / 2.0 Flash, Claude 3.5 Sonnet, GPT-4o, DeepSeek)
 
 ### C. Sandbox & Environment Layer
+
 - **Host**: Linux / Docker containerization
 - **Session Manager**: `tmux` persistent pseudo-terminal sessions
 - **Filesystem**: Volume-mounted isolated workspace directory (`/app` or configured repo root)

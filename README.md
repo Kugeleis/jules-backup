@@ -27,25 +27,31 @@ This repository contains the comprehensive backup, architecture specification, s
 ## 🚀 Quick Start (Local Run)
 
 ### Prerequisites
+
 - Python 3.10+
 - `pip`
 - Git
 
 ### 1. Install Dependencies
+
 ```bash
 pip install -r backend/requirements.txt
 ```
 
 ### 2. Run Tests
+
 Verify that all tools and diff engines operate correctly:
+
 ```bash
 PYTHONPATH=. pytest backend/tests
 ```
 
 ### 3. Launch Jules Agent Studio
+
 ```bash
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
 ```
+
 Open **[http://localhost:8000](http://localhost:8000)** in your browser to access the Jules dashboard.
 
 ---
@@ -57,6 +63,7 @@ Run Jules in a sandboxed, containerized environment:
 ```bash
 docker compose up --build
 ```
+
 The dashboard will be accessible at `http://localhost:8000`.
 
 ---
@@ -64,7 +71,7 @@ The dashboard will be accessible at `http://localhost:8000`.
 ## ⚙️ Configuration & Environment Variables
 
 | Variable | Description | Default |
-|---|---|---|
+| --- | --- | --- |
 | `WORKSPACE_ROOT` | Target repository directory for the agent to inspect and edit | Current working directory |
 | `GEMINI_API_KEY` | Google Gemini API Key | Optional |
 | `ANTHROPIC_API_KEY` | Anthropic Claude API Key | Optional |
@@ -75,6 +82,7 @@ The dashboard will be accessible at `http://localhost:8000`.
 ## 🛠️ Tool System Reference
 
 The agent supports the following native tools:
+
 - `list_files`: Browse directory trees safely within workspace bounds.
 - `read_file`: Inspect file contents.
 - `write_file`: Overwrite or create new files.
