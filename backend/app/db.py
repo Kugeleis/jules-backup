@@ -2,8 +2,8 @@ import json
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from app.config import config
 from app.models import Message, PlanState, TaskItem
@@ -19,9 +19,9 @@ def get_db_path() -> str:
 
 
 class TaskDatabase:
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str | None = None):
         self.db_path = db_path or get_db_path()
-        self._shared_conn: Optional[sqlite3.Connection] = None
+        self._shared_conn: sqlite3.Connection | None = None
         if self.db_path == ":memory:":
             self._shared_conn = sqlite3.connect(":memory:")
             self._shared_conn.row_factory = sqlite3.Row
@@ -78,11 +78,11 @@ class TaskDatabase:
     def create_task(
         self,
         prompt: str,
-        workspace_path: Optional[str] = None,
-        title: Optional[str] = None,
+        workspace_path: str | None = None,
+        title: str | None = None,
     ) -> TaskItem:
         task_id = str(uuid.uuid4())[:8]
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         if not title:
             first_line = (
                 prompt.strip().splitlines()[0] if prompt.strip() else "Untitled Task"
@@ -174,7 +174,7 @@ class TaskDatabase:
             if self._shared_conn is None:
                 conn.close()
 
-    def get_task(self, task_id: str) -> Optional[TaskItem]:
+    def get_task(self, task_id: str) -> TaskItem | None:
         conn = self._get_connection()
         try:
             cursor = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
@@ -206,14 +206,14 @@ class TaskDatabase:
     def update_task(
         self,
         task_id: str,
-        status: Optional[str] = None,
-        plan_state: Optional[PlanState] = None,
-        waiting_for_user: Optional[bool] = None,
-        pending_user_prompt: Optional[str] = None,
-        is_completed: Optional[bool] = None,
-        submission_details: Optional[dict[str, Any]] = None,
+        status: str | None = None,
+        plan_state: PlanState | None = None,
+        waiting_for_user: bool | None = None,
+        pending_user_prompt: str | None = None,
+        is_completed: bool | None = None,
+        submission_details: dict[str, Any] | None = None,
     ):
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         fields = ["updated_at = ?"]
         values: list[Any] = [now]
 
@@ -259,7 +259,7 @@ class TaskDatabase:
                 conn.close()
 
     def add_message(self, task_id: str, message: Message):
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         conn = self._get_connection()
         try:
             conn.execute(

@@ -1,6 +1,7 @@
 from pathlib import Path
-from box import Box
+
 import yaml
+from box import Box
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
 

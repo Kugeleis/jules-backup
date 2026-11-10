@@ -30,7 +30,7 @@ package = false
 pythonpath = ["."]
 
 [tool.ty.environment]
-root = ["../backend/app"]
+extra-paths = ["."]
 
 [tool.ty.src]
-include = ["../backend/app", "../backend/tests"]
+include = ["app", "tests"]

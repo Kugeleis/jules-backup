@@ -52,6 +52,7 @@ def test_task_database_crud(tmp_path):
         pending_user_prompt="Confirm?",
     )
     updated = db.get_task(task.id)
+    assert updated is not None
     assert updated.status == "waiting_for_user"
     assert updated.waiting_for_user is True
     assert updated.pending_user_prompt == "Confirm?"
@@ -83,11 +84,13 @@ def test_agent_multi_task_management(tmp_path):
         "set_plan", {"plan": "1. *Step A*\n2. *Step B*"}, task_id=task2.id
     )
     t2 = db.get_task(task2.id)
+    assert t2 is not None
     assert t2.plan_state is not None
     assert len(t2.plan_state.steps) == 2
 
     # Task 1 remains unaffected
     t1 = db.get_task(task1.id)
+    assert t1 is not None
     assert t1.plan_state is None
 
     # Switch active task to task 1

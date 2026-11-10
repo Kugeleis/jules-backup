@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from app.db import TaskDatabase
 from app.models import Message, PlanStep, TaskItem
@@ -160,12 +160,12 @@ TOOL_DEFINITIONS = [
 
 
 class JulesAgentEngine:
-    def __init__(self, default_workspace_root: str, db: Optional[TaskDatabase] = None):
+    def __init__(self, default_workspace_root: str, db: TaskDatabase | None = None):
         self.default_workspace_root: str = default_workspace_root
         self.db = db or TaskDatabase()
-        self.active_task_id: Optional[str] = None
+        self.active_task_id: str | None = None
 
-    def get_workspace_root(self, task_id: Optional[str] = None) -> str:
+    def get_workspace_root(self, task_id: str | None = None) -> str:
         tid = task_id or self.active_task_id
         if tid:
             task = self.db.get_task(tid)
@@ -176,8 +176,8 @@ class JulesAgentEngine:
     def create_task(
         self,
         prompt: str,
-        workspace_path: Optional[str] = None,
-        title: Optional[str] = None,
+        workspace_path: str | None = None,
+        title: str | None = None,
     ) -> TaskItem:
         task = self.db.create_task(
             prompt=prompt,
@@ -187,7 +187,7 @@ class JulesAgentEngine:
         self.active_task_id = task.id
         return task
 
-    def get_active_task(self) -> Optional[TaskItem]:
+    def get_active_task(self) -> TaskItem | None:
         if not self.active_task_id:
             return None
         return self.db.get_task(self.active_task_id)
@@ -203,7 +203,7 @@ class JulesAgentEngine:
         return active.waiting_for_user if active else False
 
     @property
-    def pending_user_prompt(self) -> Optional[str]:
+    def pending_user_prompt(self) -> str | None:
         active = self.get_active_task()
         return active.pending_user_prompt if active else None
 
@@ -213,7 +213,7 @@ class JulesAgentEngine:
         return active.is_completed if active else False
 
     @property
-    def submission_details(self) -> Optional[dict[str, Any]]:
+    def submission_details(self) -> dict[str, Any] | None:
         active = self.get_active_task()
         return active.submission_details if active else None
 
@@ -223,14 +223,14 @@ class JulesAgentEngine:
             return []
         return self.db.get_messages(self.active_task_id)
 
-    def set_active_task(self, task_id: str) -> Optional[TaskItem]:
+    def set_active_task(self, task_id: str) -> TaskItem | None:
         task = self.db.get_task(task_id)
         if task:
             self.active_task_id = task.id
         return task
 
     def execute_tool(
-        self, name: str, args: dict[str, Any], task_id: Optional[str] = None
+        self, name: str, args: dict[str, Any], task_id: str | None = None
     ) -> dict[str, Any]:
         """Dispatches tool execution synchronously within the task context."""
         tid = task_id or self.active_task_id
@@ -274,14 +274,14 @@ class JulesAgentEngine:
             msg = args.get("message", "")
             if task and task.plan_state and task.plan_state.current_step_id is not None:
                 plan_state = task.plan_state
-                step: Optional[PlanStep] = next(
+                step: PlanStep | None = next(
                     (s for s in plan_state.steps if s.id == plan_state.current_step_id),
                     None,
                 )
                 if step:
                     step.completed = True
                     step.completion_message = msg
-                next_step: Optional[PlanStep] = next(
+                next_step: PlanStep | None = next(
                     (s for s in plan_state.steps if not s.completed), None
                 )
                 plan_state.current_step_id = next_step.id if next_step else None
@@ -370,7 +370,7 @@ class JulesAgentEngine:
             return {"error": f"Unknown tool '{name}'"}
 
     async def execute_tool_async(
-        self, name: str, args: dict[str, Any], task_id: Optional[str] = None
+        self, name: str, args: dict[str, Any], task_id: str | None = None
     ) -> dict[str, Any]:
         tid = task_id or self.active_task_id
         if name == "run_in_bash_session":
@@ -390,9 +390,7 @@ class JulesAgentEngine:
             return res
         return self.execute_tool(name, args, task_id=tid)
 
-    def reply_to_user(
-        self, response_text: str, task_id: Optional[str] = None
-    ) -> TaskItem:
+    def reply_to_user(self, response_text: str, task_id: str | None = None) -> TaskItem:
         tid = task_id or self.active_task_id
         if not tid:
             raise ValueError("No task specified or active.")
