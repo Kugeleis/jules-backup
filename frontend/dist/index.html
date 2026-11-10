@@ -12,18 +12,35 @@
 <body>
     <header class="app-header">
         <div class="logo-container">
+            <button id="toggle-task-sidebar-btn" class="icon-btn" title="Toggle Task History" onclick="toggleTaskSidebar()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                </svg>
+            </button>
             <svg class="jules-icon" viewBox="0 0 24 24" width="24" height="24">
                 <path fill="#4285F4" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
             </svg>
             <span class="logo-text">jules <span class="badge">agent-studio</span></span>
         </div>
         <div class="header-status">
+            <span id="active-task-badge" class="badge task-badge">No Active Task</span>
             <span id="connection-status" class="status-indicator online">Connected</span>
             <span id="workspace-label" class="workspace-label">/app</span>
         </div>
     </header>
 
     <main class="main-layout">
+        <!-- Far-Left: Task History Drawer / Sidebar -->
+        <aside id="task-sidebar" class="task-history-panel">
+            <div class="panel-header">
+                <h3>Task History</h3>
+                <button class="btn btn-sm btn-primary" onclick="startNewTask()">+ New Task</button>
+            </div>
+            <div id="task-list" class="task-list">
+                <div class="empty-state">No previous tasks.</div>
+            </div>
+        </aside>
+
         <!-- Sidebar: Planning & Steps Tracker -->
         <aside class="sidebar-panel">
             <div class="panel-header">
@@ -46,9 +63,11 @@
         <!-- Center: Task Interaction & Tool Output Feed -->
         <section class="activity-panel">
             <div class="panel-header">
-                <h3>Activity Stream</h3>
+                <div class="task-header-info">
+                    <h3 id="current-task-title">Activity Stream</h3>
+                </div>
                 <div class="actions">
-                    <button class="btn btn-sm btn-outline" onclick="clearFeed()">Clear</button>
+                    <button class="btn btn-sm btn-outline" onclick="clearFeed()">Clear Feed</button>
                 </div>
             </div>
             <div id="feed-container" class="feed-container">

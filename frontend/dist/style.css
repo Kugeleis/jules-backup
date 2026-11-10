@@ -2,6 +2,7 @@
     --bg-dark: #121316;
     --bg-panel: #1e1f24;
     --bg-panel-secondary: #272930;
+    --bg-card-hover: #32353e;
     --border-color: #32353d;
     --text-primary: #e3e3e3;
     --text-secondary: #9aa0a6;
@@ -33,7 +34,7 @@ body {
 .app-header {
     background-color: var(--bg-panel);
     border-bottom: 1px solid var(--border-color);
-    padding: 12px 24px;
+    padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -42,7 +43,25 @@ body {
 .logo-container {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+}
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.icon-btn:hover {
+    background: var(--bg-panel-secondary);
+    color: var(--text-primary);
 }
 
 .logo-text {
@@ -64,6 +83,15 @@ body {
 .agent-badge {
     background-color: rgba(138, 180, 248, 0.15);
     color: var(--accent-blue);
+}
+
+.task-badge {
+    background-color: rgba(253, 214, 99, 0.15);
+    color: var(--accent-yellow);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .header-status {
@@ -98,16 +126,26 @@ body {
 .main-layout {
     flex: 1;
     display: grid;
-    grid-template-columns: 300px 1fr 380px;
-    height: calc(100vh - 57px);
+    grid-template-columns: 260px 280px 1fr 360px;
+    height: calc(100vh - 53px);
     overflow: hidden;
+    transition: grid-template-columns 0.2s ease;
 }
 
-.sidebar-panel, .activity-panel, .inspector-panel {
+.main-layout.sidebar-collapsed {
+    grid-template-columns: 0px 280px 1fr 360px;
+}
+
+.task-history-panel, .sidebar-panel, .activity-panel, .inspector-panel {
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     background-color: var(--bg-panel);
+    overflow: hidden;
+}
+
+.task-history-panel {
+    background-color: #17181c;
 }
 
 .inspector-panel {
@@ -115,15 +153,16 @@ body {
 }
 
 .panel-header {
-    padding: 14px 18px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-height: 48px;
 }
 
 .panel-header h3 {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -132,6 +171,105 @@ body {
     margin-top: 16px;
 }
 
+/* Task History List */
+.task-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.task-card {
+    background-color: var(--bg-panel-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.task-card:hover {
+    background-color: var(--bg-card-hover);
+    border-color: #454954;
+}
+
+.task-card.active {
+    border-color: var(--accent-blue);
+    background-color: rgba(138, 180, 248, 0.08);
+}
+
+.task-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.task-card-title {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.task-status-chip {
+    font-size: 0.68rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.task-status-chip.in_progress {
+    background: rgba(138, 180, 248, 0.15);
+    color: var(--accent-blue);
+}
+
+.task-status-chip.waiting_for_user {
+    background: rgba(253, 214, 99, 0.2);
+    color: var(--accent-yellow);
+}
+
+.task-status-chip.completed {
+    background: rgba(129, 201, 149, 0.2);
+    color: var(--accent-green);
+}
+
+.task-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.task-delete-btn {
+    opacity: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 0.8rem;
+}
+
+.task-card:hover .task-delete-btn {
+    opacity: 1;
+}
+
+.task-delete-btn:hover {
+    color: var(--accent-red);
+}
+
+/* Plan */
 .plan-list {
     flex: 1;
     overflow-y: auto;
@@ -178,8 +316,15 @@ body {
     gap: 8px;
 }
 
+/* Activity Panel */
 .activity-panel {
     background-color: var(--bg-dark);
+}
+
+.task-header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .feed-container {
