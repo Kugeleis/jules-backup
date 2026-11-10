@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Any, Optional
 
-from app.models import Message, PlanState, PlanStep
+from app.db import TaskDatabase
+from app.models import Message, PlanStep, TaskItem
 from app.planner import parse_plan_markdown
 from app.tools import ToolExecutor
 
@@ -159,77 +160,209 @@ TOOL_DEFINITIONS = [
 
 
 class JulesAgentEngine:
-    def __init__(self, workspace_root: str):
-        self.workspace_root: str = workspace_root
-        self.tools = ToolExecutor(workspace_root)
-        self.plan_state: PlanState | None = None
-        self.messages: list[Message] = []
-        self.waiting_for_user = False
-        self.pending_user_prompt: str | None = None
-        self.is_completed = False
-        self.submission_details: dict[str, Any] | None = None
+    def __init__(self, default_workspace_root: str, db: Optional[TaskDatabase] = None):
+        self.default_workspace_root: str = default_workspace_root
+        self.db = db or TaskDatabase()
+        self.active_task_id: Optional[str] = None
 
-    def execute_tool(self, name: str, args: dict[str, Any]) -> dict[str, Any]:
-        """Dispatches tool execution synchronously or asynchronously."""
+    def get_workspace_root(self, task_id: Optional[str] = None) -> str:
+        tid = task_id or self.active_task_id
+        if tid:
+            task = self.db.get_task(tid)
+            if task and task.workspace_path:
+                return task.workspace_path
+        return self.default_workspace_root
+
+    def create_task(
+        self,
+        prompt: str,
+        workspace_path: Optional[str] = None,
+        title: Optional[str] = None,
+    ) -> TaskItem:
+        task = self.db.create_task(
+            prompt=prompt,
+            workspace_path=workspace_path or self.default_workspace_root,
+            title=title,
+        )
+        self.active_task_id = task.id
+        return task
+
+    def get_active_task(self) -> Optional[TaskItem]:
+        if not self.active_task_id:
+            return None
+        return self.db.get_task(self.active_task_id)
+
+    @property
+    def plan_state(self):
+        active = self.get_active_task()
+        return active.plan_state if active else None
+
+    @property
+    def waiting_for_user(self) -> bool:
+        active = self.get_active_task()
+        return active.waiting_for_user if active else False
+
+    @property
+    def pending_user_prompt(self) -> Optional[str]:
+        active = self.get_active_task()
+        return active.pending_user_prompt if active else None
+
+    @property
+    def is_completed(self) -> bool:
+        active = self.get_active_task()
+        return active.is_completed if active else False
+
+    @property
+    def submission_details(self) -> Optional[dict[str, Any]]:
+        active = self.get_active_task()
+        return active.submission_details if active else None
+
+    @property
+    def messages(self) -> list[Message]:
+        if not self.active_task_id:
+            return []
+        return self.db.get_messages(self.active_task_id)
+
+    def set_active_task(self, task_id: str) -> Optional[TaskItem]:
+        task = self.db.get_task(task_id)
+        if task:
+            self.active_task_id = task.id
+        return task
+
+    def execute_tool(
+        self, name: str, args: dict[str, Any], task_id: Optional[str] = None
+    ) -> dict[str, Any]:
+        """Dispatches tool execution synchronously within the task context."""
+        tid = task_id or self.active_task_id
+        workspace_root = self.get_workspace_root(tid)
+        tools = ToolExecutor(workspace_root)
+        task = self.db.get_task(tid) if tid else None
+
         if name == "list_files":
-            return self.tools.list_files(args.get("path", ""))
+            return tools.list_files(args.get("path", ""))
         elif name == "read_file":
-            return self.tools.read_file(args.get("filepath", ""))
+            return tools.read_file(args.get("filepath", ""))
         elif name == "write_file":
-            return self.tools.write_file(
-                args.get("filepath", ""), args.get("content", "")
-            )
+            return tools.write_file(args.get("filepath", ""), args.get("content", ""))
         elif name == "replace_with_git_merge_diff":
-            return self.tools.replace_with_git_merge_diff(
+            return tools.replace_with_git_merge_diff(
                 args.get("filepath", ""), args.get("merge_diff", "")
             )
         elif name == "delete_file":
-            return self.tools.delete_file(args.get("filepath", ""))
+            return tools.delete_file(args.get("filepath", ""))
         elif name == "rename_file":
-            return self.tools.rename_file(
+            return tools.rename_file(
                 args.get("filepath", ""), args.get("new_filepath", "")
             )
         elif name == "set_plan":
             raw = args.get("plan", "")
-            self.plan_state = parse_plan_markdown(raw)
-            return {"result": f"Plan updated with {len(self.plan_state.steps)} steps."}
+            new_plan = parse_plan_markdown(raw)
+            if not tid:
+                created = self.create_task(prompt="Plan execution")
+                tid = created.id
+            self.db.update_task(tid, plan_state=new_plan)
+            self.db.add_message(
+                tid,
+                Message(
+                    role="assistant",
+                    content=f"Set execution plan with {len(new_plan.steps)} steps.",
+                    tool_calls=[{"name": "set_plan", "arguments": args}],
+                ),
+            )
+            return {"result": f"Plan updated with {len(new_plan.steps)} steps."}
         elif name == "plan_step_complete":
             msg = args.get("message", "")
-            if self.plan_state and self.plan_state.current_step_id is not None:
-                step: PlanStep | None = next(
-                    (
-                        s
-                        for s in self.plan_state.steps
-                        if s.id == self.plan_state.current_step_id
-                    ),
+            if task and task.plan_state and task.plan_state.current_step_id is not None:
+                plan_state = task.plan_state
+                step: Optional[PlanStep] = next(
+                    (s for s in plan_state.steps if s.id == plan_state.current_step_id),
                     None,
                 )
                 if step:
                     step.completed = True
                     step.completion_message = msg
-                next_step: PlanStep | None = next(
-                    (s for s in self.plan_state.steps if not s.completed), None
+                next_step: Optional[PlanStep] = next(
+                    (s for s in plan_state.steps if not s.completed), None
                 )
-                self.plan_state.current_step_id = next_step.id if next_step else None
+                plan_state.current_step_id = next_step.id if next_step else None
+                if tid:
+                    self.db.update_task(tid, plan_state=plan_state)
+                    self.db.add_message(
+                        tid,
+                        Message(
+                            role="assistant",
+                            content=f"Completed plan step: {msg}",
+                            tool_calls=[
+                                {"name": "plan_step_complete", "arguments": args}
+                            ],
+                        ),
+                    )
                 return {"result": f"Step marked complete: {msg}"}
             return {"result": f"Marked complete: {msg}"}
         elif name == "pre_commit_instructions":
-            return {
-                "result": "Pre-commit checklist:\n"
+            res = (
+                "Pre-commit checklist:\n"
                 "1. Run all repository test suites and linters.\n"
                 "2. Verify diffs are clean and no temporary files are left.\n"
                 "3. Complete code review and verification checks.\n"
                 "4. Call 'submit' tool when all checks pass."
-            }
+            )
+            if tid:
+                self.db.add_message(
+                    tid,
+                    Message(
+                        role="tool",
+                        name="pre_commit_instructions",
+                        content=res,
+                    ),
+                )
+            return {"result": res}
         elif name == "request_user_input":
-            self.waiting_for_user = True
-            self.pending_user_prompt = args.get("message", "")
+            user_msg = args.get("message", "")
+            if tid:
+                self.db.update_task(
+                    tid,
+                    waiting_for_user=True,
+                    pending_user_prompt=user_msg,
+                    status="waiting_for_user",
+                )
+                self.db.add_message(
+                    tid,
+                    Message(
+                        role="assistant",
+                        content=user_msg,
+                        tool_calls=[{"name": "request_user_input", "arguments": args}],
+                    ),
+                )
             return {"result": "Waiting for user input..."}
         elif name == "message_user":
-            return {"result": f"Message displayed to user: {args.get('message')}"}
+            user_msg = args.get("message", "")
+            if tid:
+                self.db.add_message(
+                    tid,
+                    Message(
+                        role="assistant",
+                        content=user_msg,
+                        tool_calls=[{"name": "message_user", "arguments": args}],
+                    ),
+                )
+            return {"result": f"Message displayed to user: {user_msg}"}
         elif name == "submit":
-            self.is_completed = True
-            self.submission_details: dict[str, Any] = args
+            if tid:
+                self.db.update_task(
+                    tid,
+                    is_completed=True,
+                    status="completed",
+                    submission_details=args,
+                )
+                self.db.add_message(
+                    tid,
+                    Message(
+                        role="assistant",
+                        content=f"Submitted task to branch '{args.get('branch_name')}'.",
+                        tool_calls=[{"name": "submit", "arguments": args}],
+                    ),
+                )
             return {
                 "result": f"Successfully submitted change to branch '{args.get('branch_name')}'."
             }
@@ -237,9 +370,46 @@ class JulesAgentEngine:
             return {"error": f"Unknown tool '{name}'"}
 
     async def execute_tool_async(
-        self, name: str, args: dict[str, Any]
+        self, name: str, args: dict[str, Any], task_id: Optional[str] = None
     ) -> dict[str, Any]:
+        tid = task_id or self.active_task_id
         if name == "run_in_bash_session":
+            workspace_root = self.get_workspace_root(tid)
+            tools = ToolExecutor(workspace_root)
             cmd = args.get("command", "")
-            return await self.tools.run_in_bash(cmd)
-        return self.execute_tool(name, args)
+            res = await tools.run_in_bash(cmd)
+            if tid:
+                self.db.add_message(
+                    tid,
+                    Message(
+                        role="tool",
+                        name="run_in_bash_session",
+                        content=f"$ {cmd}\n{res.get('output', '')}",
+                    ),
+                )
+            return res
+        return self.execute_tool(name, args, task_id=tid)
+
+    def reply_to_user(
+        self, response_text: str, task_id: Optional[str] = None
+    ) -> TaskItem:
+        tid = task_id or self.active_task_id
+        if not tid:
+            raise ValueError("No task specified or active.")
+        task = self.db.get_task(tid)
+        if not task:
+            raise ValueError(f"Task '{tid}' not found.")
+        if not task.waiting_for_user:
+            raise ValueError("Task is not waiting for user input.")
+
+        self.db.update_task(
+            tid,
+            waiting_for_user=False,
+            pending_user_prompt=None,
+            status="in_progress",
+        )
+        self.db.add_message(
+            tid,
+            Message(role="user", content=response_text),
+        )
+        return self.db.get_task(tid)  # type: ignore
